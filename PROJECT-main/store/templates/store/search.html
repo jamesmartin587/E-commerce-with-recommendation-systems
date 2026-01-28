@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+	<title>JMCommerce</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1" />
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+	<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+	<script type="text/javascript" src="{% static 'js/userToken.js'%}">
+	</script>
+	<script type="text/javascript" src="{% static 'js/userCookie.js'%}">
+	</script>
+	<script type ="text/javascript">
+		var user = '{{request.user}}';
+		var csrftoken = getToken('csrftoken');
+		var cart = JSON.parse(getCookie('cart'));
+		if(cart==undefined){
+			cart={}
+			console.log('Cart was created')
+			document.cookie = 'cart='+JSON.stringify(cart)+";domain=;path=/"
+		}
+		console.log('cart:',cart);
+	</script>
+
+</head>
+<body>
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+	  <a class="navbar-brand" href="{% url 'store' %}">JMCommerce</a>
+	  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+	  	<span class="navbar-toggler-icon"></span>
+	  </button>
+
+	  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+	    <ul class="navbar-nav mr-auto">
+	      <li class="nav-item active">
+      		<a class="nav-link" href="{% url 'store'%}"> Store <span class="sr-only">(current)</span></a>
+    	  </li>
+		  <li class="nav-item active">
+			<div class="dropdowncat active">
+				<a class="nav-link">Categories</a>
+				{% if categories %}
+					<div class="dropdowncat-content">
+						<div class="categorydropdown">
+							{% for category in categories %}
+								<form method=POST action="{% url 'category_search' %}">
+									{% csrf_token %}
+									<div>
+										<input class="searchcontainer" type="hidden" name="categorysearch" value="{{category.primarycategory}}"/>
+										<button class="categorydisplay" type="submit">{{category.primarycategory}}</button>
+									</div>
+								</form>
+							{% endfor %}
+						</div>
+					</div>
+				{% else %}
+					<div class="dropdowncat-content">
+						<div>
+							<h4 style="margin:20px;text-align:center;">No items in your cart</h4>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+    	  </li>
+	    </ul>
+		<form class="d-flex" method=POST action="{% url 'search' %}">
+			{% csrf_token %}
+			<div>
+				<ul class = "navbar-nav">
+					<li>
+						<input class="searchcontainer" type="text" name="searchbars" placeholder="Search JMCommerce..."/>
+					</li>
+					<li>
+						<button type="submit" class ="searchbox"><img src="{% static 'images/search.png' %}"></img></button>
+					</li>
+				</ul>
+				&nbsp;
+			</div>
+		</form>
+		<div class="form-inline my-2 my-lg-0">
+			{% if user.is_authenticated %}
+		      <a href="{% url 'logout' %}" class="btn btn-warning loginup">Logout</a>
+			{% else %}
+			  <a href="{% url 'login' %}" class="btn btn-warning loginup">Login</a>
+			{%endif %}
+            <div class="dropdown">
+				<a class="drop-btn" href="{% url 'cart' %}">
+					<img  id="cart-icon" src="{% static 'images/cart.png' %}">
+				</a>
+				<p id="cart-total" style="float:right;">{{cartItems}}</p>
+				{% if items %}
+					<div class="dropdown-content">
+						<div class="cartdropdown">
+							{% for item in items%}
+							<div class="cart-row" style="margin-top:10px;">
+								<div style="flex:2"><img class="row-image" style="margin-left:5px;margin-top:10px;" src="{{item.product.image}}"></div>
+								<div style="flex:2"><p style="margin-left:5px;">{{item.product.name}}</p></div>
+								<div style="flex:1"><p style = "margin-top:20px;margin-right:5px;">£{{item.product.price|floatformat:2}}</p></div>
+								<div style="flex:1">
+									<p class="quantity" style = "margin-top:20px;margin-right:-5px;">Qty:{{item.quantity}}</p>
+									<div class="quantity" style = "margin-left:15px;">
+										<img class="chg-quantity update-cart" data-product={{item.product.id}} data-action="adds" src="{% static  'images/uparrow.png' %}"/>
+										<img class="chg-quantity update-cart" data-product={{item.product.id}} data-action="remove" src="{% static  'images/downarrow.png' %}"/>
+									</div>
+								</div>
+							</div>
+							{%endfor%}
+						</div>
+						<h5 style="text-align:center;margin:10px;">Total:<strong> £{{order.getCartTotal|floatformat:2}}</strong></h5>
+						<a class="btn btn-success" href="{% url 'checkout'%}">Checkout</a>
+					</div>
+				{% else %}
+					<div class="dropdown-content">
+						<div>
+							<h4 style="margin:20px;text-align:center;">No items in your cart</h4>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	  </div>
+	</nav>
+    <nav class="navbar navbar-expand-lg navbar-dark " style="border:1px solid black; height:35px;">
+        <div>
+            <h6 style="margin-bottom:3px;">You searched for: "{{searched}}"</h6>
+        </div>
+    </nav>
+	{% if messages %}
+		{% for message in messages %}
+			<div class="alert alert-warning alert-dismissible fade show" role="alert">
+				<strong>{{message}}</strong>
+				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			</div>
+		{% endfor %}
+	{% endif %}
+    <div class="row" style ="width:89%; margin-left:81px;">
+        {% if products %}
+            {% for product in products %}
+            <div class="col-lg-4">
+                <img class="thumbnail" src="{{product.image}}">
+                <div class="box-element" "product">
+                    <h6><strong>{{product.name}}</strong></h6>
+                    <hr/>
+                    <button class="btn btn-outline-secondary add-btn update-cart" data-product={{product.id}} data-action="add">Add to Cart</button>
+                    <h4 style="display:inline-block; float:right">£{{product.price|floatformat:2}}</h4>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div>
+                <br/>
+                <h4>No results for "{{searched}}"</h4>
+                <h6>Try checking your spelling or use more general terms</h6>
+            </div>
+        {% endif %}
+    </div>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" src="{% static 'js/cart.js' %}"></script>
+</body>
+</html>
